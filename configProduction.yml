@@ -1,0 +1,15 @@
+# Database credentials
+database:
+  # antingen denna
+  file: "" 
+  # eller alla dessa (om file är blankt)
+  sql-user: "root"            #
+  sql-pass: "hejsan1"
+  sql-server: "mysqlserver1"
+  sql-database: "Whiteboard"
+  sql-port: 3306
+
+whiteboard:
+  width: 800
+  height: 600
+
