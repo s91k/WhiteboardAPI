@@ -27,9 +27,22 @@ func apiGetBoard(c *gin.Context) {
 	enableCors(c)
 
 	var pixels []data.Pixel
-	data.DB.Order("Y").Order("X").Find(&pixels)
+	data.DB.Order("y").Order("x").Find(&pixels)
 
-	c.JSON(http.StatusOK, pixels)
+	width := pixels[len(pixels)-1].X + 1
+	height := pixels[len(pixels)-1].Y + 1
+
+	grid := make([][]string, height)
+
+	for i := range grid {
+		grid[i] = make([]string, width)
+	}
+
+	for _, pixel := range pixels {
+		grid[pixel.Y][pixel.X] = pixel.Color
+	}
+
+	c.JSON(http.StatusOK, grid)
 }
 
 func apiGetPixel(c *gin.Context) {
@@ -90,9 +103,9 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", start)
-	router.GET("/api/board", apiGetBoard)
-	router.GET("/api/pixel/:x/:y", apiGetPixel)
-	router.POST("/api/pixel/:x/:y", apiSetPixel)
+	router.GET("/board", apiGetBoard)
+	router.GET("/pixel/:x/:y", apiGetPixel)
+	router.POST("/pixel/:x/:y", apiSetPixel)
 
 	router.Run(":8080")
 }
