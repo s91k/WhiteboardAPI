@@ -18,8 +18,8 @@ func start(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func isHTMLColor(s string) bool {
-	re := regexp.MustCompile("^#[0-9A-Fa-f]{6}$")
+func isColor(s string) bool {
+	re := regexp.MustCompile("^[0-9A-Fa-f]{6}$")
 	return re.MatchString(s)
 }
 
@@ -75,10 +75,10 @@ func apiSetPixel(c *gin.Context) {
 	} else {
 		color := c.Query("color")
 
-		if !isHTMLColor(color) {
+		if !isColor(color) {
 			c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "invalid color"})
 		} else {
-			data.DB.Where(map[string]interface{}{"x": 0, "y": 0}).Updates(&data.Pixel{Color: color})
+			data.DB.Where(map[string]interface{}{"x": x, "y": x}).Updates(&data.Pixel{Color: color})
 
 			c.IndentedJSON(http.StatusAccepted, pixel)
 		}

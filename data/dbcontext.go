@@ -37,7 +37,7 @@ func InitDatabase(file, server, database, username, password string, port int, w
 	if nrOfPixels == 0 {
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
-				DB.Create(&Pixel{X: x, Y: y, Color: "#FFFFFF"})
+				DB.Create(&Pixel{X: x, Y: y, Color: "FFFFFF"})
 			}
 		}
 	}
