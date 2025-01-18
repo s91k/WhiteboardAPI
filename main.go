@@ -10,6 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
+func enableCors(c *gin.Context) {
+	(*c).Header("Access-Control-Allow-Origin", "*")
+}
+
 func start(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
@@ -20,6 +24,8 @@ func isHTMLColor(s string) bool {
 }
 
 func apiGetBoard(c *gin.Context) {
+	enableCors(c)
+
 	var pixels []data.Pixel
 	data.DB.Order("Y").Order("X").Find(&pixels)
 
@@ -27,6 +33,8 @@ func apiGetBoard(c *gin.Context) {
 }
 
 func apiGetPixel(c *gin.Context) {
+	enableCors(c)
+
 	x := c.Param("x")
 	y := c.Param("y")
 
@@ -41,6 +49,8 @@ func apiGetPixel(c *gin.Context) {
 }
 
 func apiSetPixel(c *gin.Context) {
+	enableCors(c)
+
 	x := c.Param("x")
 	y := c.Param("y")
 
