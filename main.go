@@ -78,8 +78,7 @@ func apiSetPixel(c *gin.Context) {
 		if !isHTMLColor(color) {
 			c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "invalid color"})
 		} else {
-			pixel.Color = color
-			data.DB.Save(&pixel)
+			data.DB.Where(map[string]interface{}{"x": 0, "y": 0}).Updates(&data.Pixel{Color: color})
 
 			c.IndentedJSON(http.StatusAccepted, pixel)
 		}

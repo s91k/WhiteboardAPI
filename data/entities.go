@@ -1,7 +1,7 @@
 package data
 
 type Pixel struct {
-	X     int    `gorm:"primaryKey;autoIncrement:false;not null"`
-	Y     int    `gorm:"primaryKey;autoIncrement:false;not null"`
+	X     int    `gorm:"primaryKey;autoIncrement:false"`
+	Y     int    `gorm:"primaryKey;autoIncrement:false"`
 	Color string `gorm:"not null;type:varchar(7)"`
 }
