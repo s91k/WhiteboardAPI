@@ -102,9 +102,9 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", start)
-	router.GET("/board", apiGetBoard)
-	router.GET("/pixel/:x/:y", apiGetPixel)
-	router.POST("/pixel/:x/:y", apiSetPixel)
+	router.GET("/api/board", apiGetBoard)
+	router.GET("/api/pixel/:x/:y", apiGetPixel)
+	router.POST("/api/pixel/:x/:y", apiSetPixel)
 
 	router.Run(":8080")
 }
