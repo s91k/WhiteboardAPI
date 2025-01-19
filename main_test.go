@@ -20,3 +20,27 @@ func TestStart(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, w.Code, http.StatusOK)
 }
+
+func TestCorrectColorIsAllowed(t *testing.T) {
+	color := "FF9933"
+
+	isColor := isColor(color)
+
+	assert.True(t, isColor)
+}
+
+func TestColorWithHashIsNotAllowed(t *testing.T) {
+	color := "#FF9933"
+
+	isColor := isColor(color)
+
+	assert.False(t, isColor)
+}
+
+func TestColorWithIncorrectValuesNotAllowed(t *testing.T) {
+	color := "UU99ÅÅ"
+
+	isColor := isColor(color)
+
+	assert.False(t, isColor)
+}
