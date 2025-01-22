@@ -28,17 +28,8 @@ func InitDatabase(file, server, database, username, password string, port int, w
 		DB, _ = gorm.Open(sqlite.Open(file), &gorm.Config{})
 	}
 
+	DB.AutoMigrate(&Whiteboard{})
 	DB.AutoMigrate(&Pixel{})
 
-	var nrOfPixels int64
-
-	DB.Model(&Pixel{}).Count(&nrOfPixels)
-
-	if nrOfPixels == 0 {
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				DB.Create(&Pixel{X: x, Y: y, Color: "FFFFFF"})
-			}
-		}
-	}
+	DB.FirstOrCreate(&Whiteboard{ID: 0, Width: width, Height: height, DefaultColor: "FFFFFF"})
 }

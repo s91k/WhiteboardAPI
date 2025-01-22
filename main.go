@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/s91k/WhiteboardAPI/data"
@@ -23,19 +24,34 @@ func isColor(s string) bool {
 	return re.MatchString(s)
 }
 
+func apiGetBoards(c *gin.Context) {
+	enableCors(c)
+
+	var whiteboards []data.Whiteboard
+	data.DB.Find(&whiteboards)
+
+	c.JSON(http.StatusOK, whiteboards)
+}
+
 func apiGetBoard(c *gin.Context) {
 	enableCors(c)
 
+	i := c.Param("i")
+
+	var whiteboard data.Whiteboard
+	data.DB.Where(map[string]interface{}{"id": i}).First(&whiteboard)
+
 	var pixels []data.Pixel
-	data.DB.Order("y").Order("x").Find(&pixels)
+	data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Find(&pixels)
 
-	width := pixels[len(pixels)-1].X + 1
-	height := pixels[len(pixels)-1].Y + 1
-
-	grid := make([][]string, height)
+	grid := make([][]string, whiteboard.Height)
 
 	for i := range grid {
-		grid[i] = make([]string, width)
+		grid[i] = make([]string, whiteboard.Width)
+
+		for j := range grid[i] {
+			grid[i][j] = whiteboard.DefaultColor
+		}
 	}
 
 	for _, pixel := range pixels {
@@ -45,14 +61,74 @@ func apiGetBoard(c *gin.Context) {
 	c.JSON(http.StatusOK, grid)
 }
 
+func apiCreateBoard(c *gin.Context) {
+	enableCors(c)
+
+	var whiteboard data.Whiteboard
+	err := c.BindJSON(&whiteboard)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
+	} else {
+		data.DB.Create(&whiteboard)
+
+		c.IndentedJSON(http.StatusCreated, whiteboard)
+	}
+}
+
+func apiUpdateBoard(c *gin.Context) {
+	enableCors(c)
+
+	i := c.Param("i")
+
+	var whiteboard data.Whiteboard
+	err := data.DB.Where(map[string]interface{}{"id": i}).First(&whiteboard).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "not found"})
+	} else {
+		err := c.BindJSON(&whiteboard)
+
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
+		} else {
+			data.DB.Where(map[string]interface{}{"id": i}).Save(&whiteboard)
+
+			data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Where("x >= ?", whiteboard.Width).Delete(&data.Pixel{})
+			data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Where("y >= ?", whiteboard.Height).Delete(&data.Pixel{})
+
+			c.IndentedJSON(http.StatusAccepted, whiteboard)
+		}
+	}
+}
+
+func apiDeleteBoard(c *gin.Context) {
+	enableCors(c)
+
+	i := c.Param("i")
+
+	var whiteboard data.Whiteboard
+	err := data.DB.Where(map[string]interface{}{"id": i}).First(&whiteboard).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "not found"})
+	} else {
+		data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Delete(&data.Pixel{})
+		data.DB.Where(map[string]interface{}{"id": i}).Delete(&whiteboard)
+
+		c.IndentedJSON(http.StatusAccepted, whiteboard)
+	}
+}
+
 func apiGetPixel(c *gin.Context) {
 	enableCors(c)
 
+	i := c.Param("i")
 	x := c.Param("x")
 	y := c.Param("y")
 
 	var pixel data.Pixel
-	err := data.DB.Where("x = ? AND y = ?", x, y).First(&pixel).Error
+	err := data.DB.Where(map[string]interface{}{"whiteboard_id": i, "x": x, "y": y}).First(&pixel).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "not found"})
@@ -64,23 +140,44 @@ func apiGetPixel(c *gin.Context) {
 func apiSetPixel(c *gin.Context) {
 	enableCors(c)
 
-	x := c.Param("x")
-	y := c.Param("y")
+	i := c.Param("i")
+	xStr := c.Param("x")
+	yStr := c.Param("y")
 
-	var pixel data.Pixel
-	err := data.DB.Where("x = ? AND y = ?", x, y).First(&pixel).Error
+	x, err := strconv.Atoi(xStr)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
+	}
+
+	y, err := strconv.Atoi(yStr)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid input"})
+	}
+
+	var whiteboard data.Whiteboard
+	err = data.DB.Where(map[string]interface{}{"id": i}).First(&whiteboard).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "not found"})
 	} else {
-		color := c.Query("color")
-
-		if !isColor(color) {
-			c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "invalid color"})
+		if x < 0 || x >= whiteboard.Width || y < 0 || y >= whiteboard.Height {
+			c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "out of bounds"})
 		} else {
-			data.DB.Where(map[string]interface{}{"x": x, "y": y}).Updates(&data.Pixel{Color: color})
+			color := c.Query("color")
 
-			c.IndentedJSON(http.StatusAccepted, pixel)
+			if !isColor(color) {
+				c.IndentedJSON(http.StatusNotAcceptable, gin.H{"message": "invalid color"})
+			} else {
+				var pixel data.Pixel
+				data.DB.Where(map[string]interface{}{"whiteboard_id": i, "x": x, "y": y}).FirstOrCreate(&pixel)
+				pixel.Color = color
+
+				data.DB.Where(map[string]interface{}{"whiteboard_id": i, "x": x, "y": y}).Updates(&pixel)
+
+				c.IndentedJSON(http.StatusAccepted, pixel)
+			}
 		}
 	}
 }
@@ -102,9 +199,13 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", start)
-	router.GET("/api/board", apiGetBoard)
-	router.GET("/api/pixel/:x/:y", apiGetPixel)
-	router.POST("/api/pixel/:x/:y", apiSetPixel)
+	router.GET("/api/board", apiGetBoards)
+	router.GET("/api/board/:i", apiGetBoard)
+	router.POST("/api/board", apiCreateBoard)
+	router.PUT("/api/board/:i", apiUpdateBoard)
+	router.DELETE("/api/board/:i", apiDeleteBoard)
+	router.GET("/api/board/:i/pixel/:x/:y", apiGetPixel)
+	router.POST("/api/board/:i/pixel/:x/:y", apiSetPixel)
 
 	router.Run(":8080")
 }
