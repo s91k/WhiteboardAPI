@@ -24,6 +24,7 @@ func isColor(s string) bool {
 	return re.MatchString(s)
 }
 
+// returns all boards
 func apiGetBoards(c *gin.Context) {
 	enableCors(c)
 
