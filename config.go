@@ -18,17 +18,6 @@ type Config struct {
 		Port     int    `yaml:"sql-port" envconfig:"DB_PORT"`
 	} `yaml:"database"`
 
-	Redis struct {
-		Server string `yaml:"server" envconfig:"REDIS_SERVER"`
-	} `yaml:"redis"`
-
-	SSO struct {
-		ClientId        string `yaml:"clientId" envconfig:"SSO_CLIENTID"`
-		ClientSecret    string `yaml:"clientSecret" envconfig:"SSO_CLIENTSECRET"`
-		BaseAddress     string `yaml:"baseAddress" envconfig:"SSO_BASEADDRESS"`
-		BackBaseAddress string `yaml:"backBaseAddress" envconfig:"SSO_BACKBASEADDRESS"`
-	} `yaml:"sso"`
-
 	Whiteboard struct {
 		Width  int `yaml:"width" envconfig:"WHITEBOARD_WIDTH"`
 		Height int `yaml:"height" envconfig:"WHITEBOARD_HEIGHT"`

@@ -33,6 +33,7 @@ func apiGetBoards(c *gin.Context) {
 	c.JSON(http.StatusOK, whiteboards)
 }
 
+// returns the board with the given id as a 2D array of colors
 func apiGetBoard(c *gin.Context) {
 	enableCors(c)
 
@@ -61,6 +62,7 @@ func apiGetBoard(c *gin.Context) {
 	c.JSON(http.StatusOK, grid)
 }
 
+// creates a new board with the given width, height, and default color
 func apiCreateBoard(c *gin.Context) {
 	enableCors(c)
 
@@ -76,6 +78,7 @@ func apiCreateBoard(c *gin.Context) {
 	}
 }
 
+// updates the board with the given id with the given width, height, and default color
 func apiUpdateBoard(c *gin.Context) {
 	enableCors(c)
 
@@ -94,6 +97,7 @@ func apiUpdateBoard(c *gin.Context) {
 		} else {
 			data.DB.Where(map[string]interface{}{"id": i}).Save(&whiteboard)
 
+			// delete pixels that are out of bounds
 			data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Where("x >= ?", whiteboard.Width).Delete(&data.Pixel{})
 			data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Where("y >= ?", whiteboard.Height).Delete(&data.Pixel{})
 
@@ -102,6 +106,7 @@ func apiUpdateBoard(c *gin.Context) {
 	}
 }
 
+// deletes the board with the given id
 func apiDeleteBoard(c *gin.Context) {
 	enableCors(c)
 
@@ -113,6 +118,7 @@ func apiDeleteBoard(c *gin.Context) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "not found"})
 	} else {
+		// delete the board and the pixels associated with the board
 		data.DB.Where(map[string]interface{}{"whiteboard_id": i}).Delete(&data.Pixel{})
 		data.DB.Where(map[string]interface{}{"id": i}).Delete(&whiteboard)
 
@@ -120,6 +126,7 @@ func apiDeleteBoard(c *gin.Context) {
 	}
 }
 
+// returns the pixel at the given coordinates
 func apiGetPixel(c *gin.Context) {
 	enableCors(c)
 
@@ -137,6 +144,7 @@ func apiGetPixel(c *gin.Context) {
 	}
 }
 
+// sets the pixel at the given coordinates to the given color
 func apiSetPixel(c *gin.Context) {
 	enableCors(c)
 
